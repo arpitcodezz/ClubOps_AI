@@ -20,7 +20,10 @@ def get_tasks(db: Session = Depends(get_db)):
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def get_task(task_id: int, db: Session = Depends(get_db)):
+def get_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+):
     task = db.get(Task, task_id)
 
     if task is None:
@@ -39,8 +42,8 @@ def create_task(
 ):
     task = Task(
         event_id=task_data.event_id,
-        created_by=task_data.created_by,
         assigned_to=task_data.assigned_to,
+        created_by=task_data.created_by,
         title=task_data.title,
         description=task_data.description,
         priority=task_data.priority,
