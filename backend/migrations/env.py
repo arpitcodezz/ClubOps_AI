@@ -9,6 +9,7 @@ from app.db.database import Base
 from app.models.user import User
 from app.models.club import Club
 from app.models.club_member import ClubMember
+from app.models.event import Event
 
 config = context.config
 
