@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import require_roles
+from app.api.dependencies import get_current_user, require_roles
 from app.db.database import get_db
 from app.models.club import Club
 from app.schemas.club import ClubCreate, ClubResponse, ClubUpdate
@@ -14,13 +14,21 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[ClubResponse])
+@router.get(
+    "/",
+    response_model=list[ClubResponse],
+    dependencies=[Depends(get_current_user)],
+)
 def get_clubs(db: Session = Depends(get_db)):
     result = db.execute(select(Club))
     return result.scalars().all()
 
 
-@router.get("/{club_id}", response_model=ClubResponse)
+@router.get(
+    "/{club_id}",
+    response_model=ClubResponse,
+    dependencies=[Depends(get_current_user)],
+)
 def get_club(
     club_id: int,
     db: Session = Depends(get_db),
@@ -36,7 +44,11 @@ def get_club(
     return club
 
 
-@router.post("/", response_model=ClubResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=ClubResponse,
+    status_code=201,
+)
 def create_club(
     club_data: ClubCreate,
     db: Session = Depends(get_db),
@@ -56,7 +68,10 @@ def create_club(
     return club
 
 
-@router.patch("/{club_id}", response_model=ClubResponse)
+@router.patch(
+    "/{club_id}",
+    response_model=ClubResponse,
+)
 def update_club(
     club_id: int,
     club_data: ClubUpdate,
@@ -84,7 +99,10 @@ def update_club(
     return club
 
 
-@router.delete("/{club_id}", status_code=204)
+@router.delete(
+    "/{club_id}",
+    status_code=204,
+)
 def delete_club(
     club_id: int,
     db: Session = Depends(get_db),
