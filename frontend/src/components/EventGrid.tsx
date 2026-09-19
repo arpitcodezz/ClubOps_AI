@@ -21,9 +21,9 @@ export const EventGrid: React.FC<EventGridProps> = ({
 }) => {
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 py-16 px-6 text-center dark:border-zinc-800">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/60 py-16 px-6 text-center shadow-2xs">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100 text-stone-500">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -31,17 +31,17 @@ export const EventGrid: React.FC<EventGridProps> = ({
             />
           </svg>
         </div>
-        <h3 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-100">
-          No events found
+        <h3 className="mt-4 text-base font-medium text-zinc-950">
+          No campus events found
         </h3>
-        <p className="mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          We couldn&apos;t find any events matching your current search or category filter.
+        <p className="mt-1 max-w-sm text-xs leading-relaxed text-stone-500">
+          No events match your current search query or category filter. Try clearing filters to view all scheduled events.
         </p>
         {isFiltered && (
           <button
             type="button"
             onClick={onResetFilters}
-            className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2 text-xs font-medium text-zinc-900 shadow-2xs hover:bg-stone-50"
           >
             Clear all filters
           </button>
@@ -51,7 +51,7 @@ export const EventGrid: React.FC<EventGridProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-6 sm:gap-7 lg:gap-8">
       {events.map((event, index) => (
         <EventCard
           key={event.id}

@@ -19,17 +19,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/95 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/95">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-[#fcfbf9]/95 backdrop-blur-md">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12">
         {/* Brand Logo */}
         <div className="flex items-center gap-8">
           <Link
             href="/"
-            className="group flex items-center gap-2.5 text-zinc-900 transition-opacity hover:opacity-90 dark:text-zinc-50"
+            className="group flex items-center gap-2.5 text-zinc-950 transition-opacity hover:opacity-90"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-white shadow-2xs">
               <svg
-                className="h-5 w-5"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -44,38 +44,51 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
               </svg>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+              <span className="text-base font-medium tracking-tight text-zinc-950">
                 ClubOps
               </span>
-              <span className="inline-flex items-center rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-zinc-700 ring-1 ring-inset ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700">
+              <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-700 ring-1 ring-inset ring-stone-200">
                 AI
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex md:items-center md:gap-6" aria-label="Main Navigation">
+          <nav className="hidden md:flex md:items-center md:gap-7" aria-label="Main Navigation">
             <a
               href="#events"
               onClick={handleEventsClick}
-              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
             >
               Events
             </a>
             <a
               href="#clubs"
-              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
             >
               Clubs
             </a>
+            <Link
+              href="/dashboard/president"
+              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
+            >
+              President Workspace
+            </Link>
           </nav>
         </div>
 
         {/* Right Actions */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-4 md:flex">
+          <Link
+            href="/dashboard/president"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-950 transition-colors"
+          >
+            <span>President Portal</span>
+            <span aria-hidden="true">→</span>
+          </Link>
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-xs transition-colors hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus-visible:outline-zinc-100"
+            className="inline-flex items-center justify-center rounded-xl border border-stone-300 bg-white px-3.5 py-1.5 text-xs font-medium text-zinc-900 shadow-2xs hover:bg-stone-50 transition-colors"
           >
             Login
           </button>
@@ -86,16 +99,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="inline-flex items-center justify-center rounded-md p-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-zinc-600 hover:bg-stone-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-zinc-900"
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             )}
@@ -105,27 +118,34 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
 
       {/* Mobile Menu Panel */}
       {mobileMenuOpen && (
-        <div className="border-b border-zinc-200 bg-white px-4 pt-2 pb-5 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="border-b border-stone-200 bg-[#fcfbf9] px-6 pt-2 pb-5 md:hidden">
           <div className="space-y-1 pt-1 pb-3">
             <a
               href="#events"
               onClick={handleEventsClick}
-              className="block rounded-md px-3 py-2 text-base font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
             >
               Events
             </a>
             <a
               href="#clubs"
               onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2 text-base font-medium text-zinc-800 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
+              className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
             >
               Clubs
             </a>
+            <Link
+              href="/dashboard/president"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
+            >
+              President Workspace
+            </Link>
           </div>
-          <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <div className="border-t border-stone-200 pt-3">
             <button
               type="button"
-              className="w-full rounded-lg bg-zinc-900 py-2.5 text-center text-sm font-medium text-white shadow-xs hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="w-full rounded-xl bg-zinc-950 py-2.5 text-center text-xs font-medium text-white shadow-xs hover:bg-zinc-800"
             >
               Login
             </button>

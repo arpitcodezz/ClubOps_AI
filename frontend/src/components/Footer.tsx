@@ -3,15 +3,15 @@ import Link from 'next/link';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <footer className="border-t border-stone-200/80 bg-[#fcfbf9] text-zinc-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand Col */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-950 text-white">
                 <svg
-                  className="h-4 w-4"
+                  className="h-3.5 w-3.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -25,72 +25,72 @@ export const Footer: React.FC = () => {
                   />
                 </svg>
               </div>
-              <span className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
+              <span className="text-sm font-medium tracking-tight text-zinc-950">
                 ClubOps AI
               </span>
             </Link>
-            <p className="mt-3 max-w-md text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            <p className="mt-3 max-w-md text-xs leading-relaxed text-zinc-600">
               The centralized event operations and discovery platform for collegiate student organizations. Streamlining venue approvals, event scheduling, and attendee participation.
             </p>
-            <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-600">
+            <p className="mt-2 text-[11px] text-zinc-400">
               Built for campus clubs, student councils, and university communities.
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-xs font-semibold tracking-wider text-zinc-900 uppercase dark:text-zinc-100">
+            <h4 className="text-xs font-semibold tracking-wider text-zinc-950 uppercase">
               Navigation
             </h4>
-            <ul className="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <ul className="mt-3 space-y-2 text-xs text-zinc-600">
               <li>
-                <a href="#events" className="hover:text-zinc-900 dark:hover:text-white">
+                <a href="#events" className="hover:text-zinc-950 transition-colors">
                   Discover Events
                 </a>
               </li>
               <li>
-                <a href="#clubs" className="hover:text-zinc-900 dark:hover:text-white">
+                <a href="#clubs" className="hover:text-zinc-950 transition-colors">
                   Registered Clubs
                 </a>
               </li>
               <li>
-                <a href="#events" className="hover:text-zinc-900 dark:hover:text-white">
-                  Academic Workshops
-                </a>
+                <Link href="/dashboard/president" className="hover:text-zinc-950 transition-colors">
+                  President Workspace
+                </Link>
               </li>
               <li>
-                <a href="#events" className="hover:text-zinc-900 dark:hover:text-white">
-                  Sports Tournaments
-                </a>
+                <Link href="/dashboard/president/events/new" className="hover:text-zinc-950 transition-colors">
+                  Create Event
+                </Link>
               </li>
             </ul>
           </div>
 
           {/* Organizer Info */}
           <div>
-            <h4 className="text-xs font-semibold tracking-wider text-zinc-900 uppercase dark:text-zinc-100">
-              For Organizers
+            <h4 className="text-xs font-semibold tracking-wider text-zinc-950 uppercase">
+              Operations &amp; Governance
             </h4>
-            <ul className="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <ul className="mt-3 space-y-2 text-xs text-zinc-600">
               <li>
-                <span className="text-zinc-500">Club Portal (Coming Soon)</span>
+                <span className="text-zinc-500">Student Affairs Council</span>
               </li>
               <li>
                 <span className="text-zinc-500">Venue Booking Guidelines</span>
               </li>
               <li>
-                <span className="text-zinc-500">Event Approval Workflow</span>
+                <span className="text-zinc-500">Conflict Prevention Protocols</span>
               </li>
               <li>
-                <span className="text-zinc-500">Student Code of Conduct</span>
+                <span className="text-zinc-500">Code of Conduct</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-zinc-200 pt-6 text-center text-xs text-zinc-400 sm:flex sm:items-center sm:justify-between sm:text-left dark:border-zinc-800 dark:text-zinc-500">
+        <div className="mt-8 border-t border-stone-200/80 pt-6 text-center text-xs text-zinc-500 sm:flex sm:items-center sm:justify-between sm:text-left">
           <p>&copy; {new Date().getFullYear()} ClubOps AI. All rights reserved.</p>
-          <p className="mt-2 sm:mt-0">College Operations & Event Discovery Platform</p>
+          <p className="mt-2 sm:mt-0">Campus Event Operations &amp; Discovery</p>
         </div>
       </div>
     </footer>

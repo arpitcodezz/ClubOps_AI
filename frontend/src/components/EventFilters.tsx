@@ -37,18 +37,18 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
             role="tab"
             aria-selected={isSelected}
             onClick={() => onSelectCategory(category)}
-            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-100 ${
+            className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-950 ${
               isSelected
-                ? 'bg-zinc-900 text-white shadow-xs dark:bg-zinc-100 dark:text-zinc-900'
-                : 'border border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
+                ? 'bg-zinc-950 text-white shadow-2xs'
+                : 'border border-stone-200/90 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50 hover:text-zinc-950'
             }`}
           >
             <span>{category}</span>
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-semibold tabular-nums ${
+              className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
                 isSelected
-                  ? 'bg-zinc-750 text-white/90 dark:bg-zinc-200 dark:text-zinc-800'
-                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                  ? 'bg-zinc-800 text-stone-200'
+                  : 'bg-stone-100 text-stone-500'
               }`}
             >
               {count}

@@ -25,6 +25,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Hide any Next.js floating dev badges or indicators */
+[data-nextjs-dev-overlay-indicator],
+[data-nextjs-toast],
+nextjs-portal,
+#__next-build-watcher {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /* Animations v1 */
 @keyframes heroFadeUp {
   from {
