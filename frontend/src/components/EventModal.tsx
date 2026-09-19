@@ -1,0 +1,218 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { Event } from '../types/event';
+
+interface EventModalProps {
+  event: Event | null;
+  mode: 'details' | 'register';
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const EventModal: React.FC<EventModalProps> = ({
+  event,
+  mode,
+  isOpen,
+  onClose,
+}) => {
+  const [registeredEventId, setRegisteredEventId] = useState<string | null>(null);
+
+  // Handle ESC key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !event) return null;
+
+  const isClosed = event.registrationStatus === 'Closed';
+  const registered = registeredEventId === event.id;
+
+  const handleRegisterClick = () => {
+    if (!isClosed) {
+      setRegisteredEventId(event.id);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-event-title"
+    >
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal Dialog */}
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        {/* Banner image */}
+        <div className="relative aspect-16/7 w-full overflow-hidden bg-zinc-100 sm:aspect-21/9 dark:bg-zinc-800">
+          <Image
+            src={event.bannerUrl}
+            alt={event.title}
+            fill
+            unoptimized
+            className="h-full w-full object-cover"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900/70 text-white backdrop-blur-xs hover:bg-zinc-900 focus-visible:outline-2 focus-visible:outline-white"
+            aria-label="Close event dialog"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Badges */}
+          <div className="absolute bottom-3 left-4 flex flex-wrap gap-2">
+            <span className="rounded-md bg-zinc-900/85 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-xs">
+              {event.category}
+            </span>
+            <span className="rounded-md bg-white/90 px-2.5 py-1 text-xs font-semibold text-zinc-900 backdrop-blur-xs dark:bg-zinc-900/90 dark:text-zinc-100">
+              {event.registrationStatus}
+            </span>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="max-h-[70vh] overflow-y-auto p-6 sm:p-7">
+          <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            {event.clubName}
+          </p>
+          <h2
+            id="modal-event-title"
+            className="mt-1 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl dark:text-zinc-50"
+          >
+            {event.title}
+          </h2>
+
+          {/* Key Schedule Grid */}
+          <div className="mt-5 grid grid-cols-1 gap-3 rounded-xl border border-zinc-200 bg-zinc-50/75 p-4 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-950/60">
+            <div>
+              <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Date</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{event.date}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Time</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{event.time}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Venue</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{event.venue}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Entry Fee</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                {event.fee || 'Free'}
+              </p>
+            </div>
+            {event.teamSize && (
+              <div>
+                <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Participation</p>
+                <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{event.teamSize}</p>
+              </div>
+            )}
+            {event.prizes && (
+              <div>
+                <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Prize Pool</p>
+                <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{event.prizes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Detailed Description */}
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">About this Event</h3>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+              {event.description}
+            </p>
+          </div>
+
+          {/* Tags */}
+          {event.tags && event.tags.length > 0 && (
+            <div className="mt-6 flex flex-wrap gap-1.5">
+              {event.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-400"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Registration Section (Frontend interaction only) */}
+          <div className="mt-6 border-t border-zinc-200 pt-5 dark:border-zinc-800">
+            {registered ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                <div className="flex items-center gap-2">
+                  <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <p className="text-sm font-semibold">Registration pass confirmed (Demo)</p>
+                </div>
+                <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-300">
+                  You are registered for {event.title}. Bring your college student ID to {event.venue}.
+                </p>
+              </div>
+            ) : isClosed ? (
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+                <p className="text-sm font-medium">
+                  Registration for this event is currently closed.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {mode === 'register' ? 'Confirm Registration' : 'Ready to participate?'}
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Registration is free for enrolled college students.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRegisterClick}
+                  className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                >
+                  Register Now
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex justify-end border-t border-zinc-200 bg-zinc-50 px-6 py-3.5 dark:border-zinc-800 dark:bg-zinc-950">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
