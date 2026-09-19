@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user, require_roles
 from app.db.database import get_db
 from app.models.event import Event
 from app.schemas.event import EventCreate, EventResponse, EventUpdate
@@ -13,14 +14,25 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[EventResponse])
+@router.get(
+    "/",
+    response_model=list[EventResponse],
+    dependencies=[Depends(get_current_user)],
+)
 def get_events(db: Session = Depends(get_db)):
     result = db.execute(select(Event))
     return result.scalars().all()
 
 
-@router.get("/{event_id}", response_model=EventResponse)
-def get_event(event_id: int, db: Session = Depends(get_db)):
+@router.get(
+    "/{event_id}",
+    response_model=EventResponse,
+    dependencies=[Depends(get_current_user)],
+)
+def get_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+):
     event = db.get(Event, event_id)
 
     if event is None:
@@ -32,14 +44,21 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
     return event
 
 
-@router.post("/", response_model=EventResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=EventResponse,
+    status_code=201,
+)
 def create_event(
     event_data: EventCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     event = Event(
         club_id=event_data.club_id,
-        created_by=event_data.created_by,
+        created_by=int(current_user["sub"]),
         title=event_data.title,
         headline=event_data.headline,
         description=event_data.description,
@@ -60,11 +79,17 @@ def create_event(
     return event
 
 
-@router.patch("/{event_id}", response_model=EventResponse)
+@router.patch(
+    "/{event_id}",
+    response_model=EventResponse,
+)
 def update_event(
     event_id: int,
     event_data: EventUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     event = db.get(Event, event_id)
 
@@ -85,10 +110,16 @@ def update_event(
     return event
 
 
-@router.delete("/{event_id}", status_code=204)
+@router.delete(
+    "/{event_id}",
+    status_code=204,
+)
 def delete_event(
     event_id: int,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     event = db.get(Event, event_id)
 

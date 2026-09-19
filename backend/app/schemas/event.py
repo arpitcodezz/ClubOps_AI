@@ -19,7 +19,6 @@ class EventBase(BaseModel):
 
 class EventCreate(EventBase):
     club_id: int
-    created_by: int
 
 
 class EventUpdate(BaseModel):

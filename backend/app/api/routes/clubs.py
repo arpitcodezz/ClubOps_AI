@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import require_roles
 from app.db.database import get_db
 from app.models.club import Club
 from app.schemas.club import ClubCreate, ClubResponse, ClubUpdate
@@ -39,6 +40,9 @@ def get_club(
 def create_club(
     club_data: ClubCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     club = Club(
         name=club_data.name,
@@ -57,6 +61,9 @@ def update_club(
     club_id: int,
     club_data: ClubUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     club = db.get(Club, club_id)
 
@@ -81,6 +88,9 @@ def update_club(
 def delete_club(
     club_id: int,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     club = db.get(Club, club_id)
 
