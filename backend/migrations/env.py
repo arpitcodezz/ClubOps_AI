@@ -6,8 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import settings
 from app.db.database import Base
 
-# Import models here later so Alembic can detect them.
-# from app.models import ...
+from app.models.user import User
 
 config = context.config
 
