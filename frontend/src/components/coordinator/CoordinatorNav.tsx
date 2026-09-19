@@ -3,29 +3,25 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
-interface NavbarProps {
-  onNavigateToEvents?: () => void;
+interface CoordinatorNavProps {
+  coordinatorName?: string;
+  role?: string;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
+export const CoordinatorNav: React.FC<CoordinatorNavProps> = ({
+  coordinatorName = 'Aarav Sharma',
+  role = 'Event Coordinator',
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleEventsClick = (e: React.MouseEvent) => {
-    if (onNavigateToEvents) {
-      e.preventDefault();
-      onNavigateToEvents();
-    }
-    setMobileMenuOpen(false);
-  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-[#fcfbf9]/95 backdrop-blur-md">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6 sm:px-8 lg:px-12">
-        {/* Brand Logo */}
+        {/* Left: Brand + Navigation links */}
         <div className="flex items-center gap-8">
           <Link
             href="/"
-            className="group flex items-center gap-2.5 text-zinc-950 transition-opacity hover:opacity-90"
+            className="group flex items-center gap-2.5 transition-opacity hover:opacity-90"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-white shadow-2xs">
               <svg
@@ -44,60 +40,73 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
               </svg>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-medium tracking-tight text-zinc-950">
+              <span className="text-base font-bold tracking-tight text-zinc-950">
                 ClubOps
               </span>
-              <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-700 ring-1 ring-inset ring-stone-200">
+              <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-700 uppercase">
                 AI
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex md:items-center md:gap-7" aria-label="Main Navigation">
-            <a
-              href="#events"
-              onClick={handleEventsClick}
-              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
+          <nav className="hidden md:flex md:items-center md:gap-6 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <Link
+              href="/"
+              className="transition-colors hover:text-zinc-950"
             >
               Events
-            </a>
-            <a
-              href="#clubs"
-              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
+            </Link>
+            <Link
+              href="/#clubs"
+              className="transition-colors hover:text-zinc-950"
             >
               Clubs
-            </a>
+            </Link>
             <Link
               href="/dashboard/president"
-              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
+              className="transition-colors hover:text-zinc-950"
             >
               President Workspace
             </Link>
-            <Link
-              href="/dashboard/coordinator"
-              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
-            >
-              Coordinator Workspace
-            </Link>
+            <span className="h-3 w-px bg-stone-300" aria-hidden="true" />
+            <div className="flex items-center gap-1.5 text-zinc-950">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+              <span className="font-semibold text-zinc-950">Coordinator Ops</span>
+            </div>
           </nav>
         </div>
 
-        {/* Right Actions */}
+        {/* Right: Actions, Profile Area & Public Portal link */}
         <div className="hidden items-center gap-4 md:flex">
           <Link
-            href="/dashboard/president"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-950 transition-colors"
+            href="/dashboard/president/events/new"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-1.5 text-xs font-medium text-white shadow-2xs transition-colors hover:bg-zinc-800"
           >
-            <span>President Portal</span>
+            <span>Create event</span>
             <span aria-hidden="true">→</span>
           </Link>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-xl border border-stone-300 bg-white px-3.5 py-1.5 text-xs font-medium text-zinc-900 shadow-2xs hover:bg-stone-50 transition-colors"
+
+          <Link
+            href="/"
+            className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-950"
           >
-            Login
-          </button>
+            Public portal ↗
+          </Link>
+
+          <div className="flex items-center gap-3 border-l border-stone-200 pl-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 ring-1 ring-stone-300 text-xs font-semibold text-zinc-900">
+              {coordinatorName.split(' ').map((n) => n[0]).join('')}
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-semibold leading-none text-zinc-900">
+                {coordinatorName}
+              </p>
+              <p className="mt-1 text-[11px] leading-none text-zinc-500">
+                {role}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -126,20 +135,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
       {mobileMenuOpen && (
         <div className="border-b border-stone-200 bg-[#fcfbf9] px-6 pt-2 pb-5 md:hidden">
           <div className="space-y-1 pt-1 pb-3">
-            <a
-              href="#events"
-              onClick={handleEventsClick}
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
               className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
             >
               Events
-            </a>
-            <a
-              href="#clubs"
+            </Link>
+            <Link
+              href="/#clubs"
               onClick={() => setMobileMenuOpen(false)}
               className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
             >
               Clubs
-            </a>
+            </Link>
             <Link
               href="/dashboard/president"
               onClick={() => setMobileMenuOpen(false)}
@@ -147,21 +156,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
             >
               President Workspace
             </Link>
-            <Link
-              href="/dashboard/coordinator"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
-            >
-              Coordinator Workspace
-            </Link>
+            <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-800">
+              ✓ Coordinator Ops (Active)
+            </div>
           </div>
-          <div className="border-t border-stone-200 pt-3">
-            <button
-              type="button"
-              className="w-full rounded-xl bg-zinc-950 py-2.5 text-center text-xs font-medium text-white shadow-xs hover:bg-zinc-800"
+          <div className="border-t border-stone-200 pt-3 flex flex-col gap-2">
+            <Link
+              href="/dashboard/president/events/new"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full rounded-xl bg-zinc-950 py-2 text-center text-xs font-medium text-white shadow-xs hover:bg-zinc-800"
             >
-              Login
-            </button>
+              Create event →
+            </Link>
           </div>
         </div>
       )}
