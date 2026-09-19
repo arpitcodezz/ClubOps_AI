@@ -3,7 +3,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.database import engine
-from app.api.routes import clubs, events, registrations, tasks
+from app.api.routes import club_members, clubs, events, registrations, tasks
 
 
 app = FastAPI(
@@ -31,6 +31,10 @@ app.include_router(
     prefix="/api",
 )
 
+app.include_router(
+    club_members.router,
+    prefix="/api",
+)
 
 @app.get("/health")
 def health_check():
