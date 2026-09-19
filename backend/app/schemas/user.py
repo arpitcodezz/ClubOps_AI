@@ -1,26 +1,26 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserCreate(BaseModel):
     name: str
-    email: str
-    password_hash: str
+    email: EmailStr
+    password: str
     role: str = "PARTICIPANT"
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
-    email: str | None = None
-    password_hash: str | None = None
+    email: EmailStr | None = None
+    password: str | None = None
     role: str | None = None
 
 
 class UserResponse(BaseModel):
     id: int
     name: str
-    email: str
+    email: EmailStr
     role: str
     created_at: datetime
 

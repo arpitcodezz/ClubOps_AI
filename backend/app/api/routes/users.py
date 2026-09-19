@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from app.core.security import hash_password
 
 from app.db.database import get_db
 from app.models.user import User
@@ -51,11 +52,11 @@ def create_user(
         )
 
     user = User(
-        name=user_data.name,
-        email=user_data.email,
-        password_hash=user_data.password_hash,
-        role=user_data.role,
-    )
+    name=user_data.name,
+    email=user_data.email,
+    password_hash=hash_password(user_data.password),
+    role=user_data.role,
+)
 
     db.add(user)
     db.commit()
@@ -94,6 +95,12 @@ def update_user(
                 detail="Email already registered",
             )
 
+    # Hash new password before saving it
+    if "password" in update_data:
+        update_data["password_hash"] = hash_password(
+            update_data.pop("password")
+        )
+
     for field, value in update_data.items():
         setattr(user, field, value)
 
@@ -101,7 +108,6 @@ def update_user(
     db.refresh(user)
 
     return user
-
 
 @router.delete("/{user_id}", status_code=204)
 def delete_user(
