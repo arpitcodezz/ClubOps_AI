@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user, require_roles
 from app.db.database import get_db
 from app.models.club_member import ClubMember
 from app.schemas.club_member import (
@@ -17,13 +18,21 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[ClubMemberResponse])
+@router.get(
+    "/",
+    response_model=list[ClubMemberResponse],
+    dependencies=[Depends(get_current_user)],
+)
 def get_club_members(db: Session = Depends(get_db)):
     result = db.execute(select(ClubMember))
     return result.scalars().all()
 
 
-@router.get("/{member_id}", response_model=ClubMemberResponse)
+@router.get(
+    "/{member_id}",
+    response_model=ClubMemberResponse,
+    dependencies=[Depends(get_current_user)],
+)
 def get_club_member(
     member_id: int,
     db: Session = Depends(get_db),
@@ -39,10 +48,17 @@ def get_club_member(
     return member
 
 
-@router.post("/", response_model=ClubMemberResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=ClubMemberResponse,
+    status_code=201,
+)
 def create_club_member(
     member_data: ClubMemberCreate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     member = ClubMember(
         club_id=member_data.club_id,
@@ -57,11 +73,17 @@ def create_club_member(
     return member
 
 
-@router.patch("/{member_id}", response_model=ClubMemberResponse)
+@router.patch(
+    "/{member_id}",
+    response_model=ClubMemberResponse,
+)
 def update_club_member(
     member_id: int,
     member_data: ClubMemberUpdate,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     member = db.get(ClubMember, member_id)
 
@@ -82,10 +104,16 @@ def update_club_member(
     return member
 
 
-@router.delete("/{member_id}", status_code=204)
+@router.delete(
+    "/{member_id}",
+    status_code=204,
+)
 def delete_club_member(
     member_id: int,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(
+        require_roles("ADMIN", "ORGANIZER")
+    ),
 ):
     member = db.get(ClubMember, member_id)
 
