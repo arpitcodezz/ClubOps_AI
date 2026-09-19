@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MOCK_EVENTS } from '../data/mockEvents';
+import { getAllEvents } from '../lib/events';
 import { Event } from '../types/event';
 import { Navbar } from '../components/Navbar';
 import { Hero } from '../components/Hero';
@@ -12,11 +13,28 @@ import { EventModal } from '../components/EventModal';
 import { Footer } from '../components/Footer';
 
 export default function HomePage() {
+  const [allEvents, setAllEvents] = useState<Event[]>(MOCK_EVENTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('All');
   const [modalEvent, setModalEvent] = useState<Event | null>(null);
   const [modalMode, setModalMode] = useState<'details' | 'register'>('details');
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Sync with localStorage on client mount & listen for event additions
+  useEffect(() => {
+    const sync = () => {
+      setAllEvents(getAllEvents());
+    };
+    const rafId = requestAnimationFrame(sync);
+
+    window.addEventListener('clubops_events_updated', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('clubops_events_updated', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const eventsSectionRef = useRef<HTMLElement>(null);
 
@@ -29,7 +47,7 @@ export default function HomePage() {
   // Category event counts
   const categoryCounts = useMemo(() => {
     const counts: Record<FilterCategory, number> = {
-      All: MOCK_EVENTS.length,
+      All: allEvents.length,
       Technical: 0,
       Cultural: 0,
       Sports: 0,
@@ -37,18 +55,18 @@ export default function HomePage() {
       Competition: 0,
     };
 
-    MOCK_EVENTS.forEach((event) => {
+    allEvents.forEach((event) => {
       if (counts[event.category] !== undefined) {
         counts[event.category]++;
       }
     });
 
     return counts;
-  }, []);
+  }, [allEvents]);
 
   // Filtered events based on search query and category
   const filteredEvents = useMemo(() => {
-    return MOCK_EVENTS.filter((event) => {
+    return allEvents.filter((event) => {
       // Category check
       if (selectedCategory !== 'All' && event.category !== selectedCategory) {
         return false;
@@ -61,6 +79,7 @@ export default function HomePage() {
         const matchesClub = event.clubName.toLowerCase().includes(query);
         const matchesVenue = event.venue.toLowerCase().includes(query);
         const matchesDescription = event.shortDescription.toLowerCase().includes(query);
+        const matchesHeadline = event.headline?.toLowerCase().includes(query);
         const matchesTags = event.tags?.some((t) => t.toLowerCase().includes(query));
 
         return (
@@ -68,13 +87,14 @@ export default function HomePage() {
           matchesClub ||
           matchesVenue ||
           matchesDescription ||
+          Boolean(matchesHeadline) ||
           Boolean(matchesTags)
         );
       }
 
       return true;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [allEvents, searchQuery, selectedCategory]);
 
   const handleViewDetails = (event: Event) => {
     setModalEvent(event);
@@ -98,7 +118,7 @@ export default function HomePage() {
   // Distinct clubs list for the Clubs section
   const campusClubs = useMemo(() => {
     const clubMap = new Map<string, { name: string; category: string; count: number }>();
-    MOCK_EVENTS.forEach((e) => {
+    allEvents.forEach((e) => {
       const existing = clubMap.get(e.clubName);
       if (existing) {
         existing.count++;
@@ -111,7 +131,7 @@ export default function HomePage() {
       }
     });
     return Array.from(clubMap.values());
-  }, []);
+  }, [allEvents]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900 selection:bg-zinc-900 selection:text-white dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-zinc-100 dark:selection:text-zinc-900">

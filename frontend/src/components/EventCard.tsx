@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Event, RegistrationStatus } from '../types/event';
 
 interface EventCardProps {
   event: Event;
+  index?: number;
   onViewDetails: (event: Event) => void;
   onRegister: (event: Event) => void;
 }
@@ -39,14 +40,63 @@ const statusBadgeStyles: Record<RegistrationStatus, { bg: string; text: string; 
 
 export const EventCard: React.FC<EventCardProps> = ({
   event,
+  index = 0,
   onViewDetails,
   onRegister,
 }) => {
   const statusConfig = statusBadgeStyles[event.registrationStatus];
   const isClosed = event.registrationStatus === 'Closed';
 
+  const [isVisible, setIsVisible] = useState(false);
+  const [animationFinished, setAnimationFinished] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (!('IntersectionObserver' in window)) {
+      const rafId = requestAnimationFrame(() => setIsVisible(true));
+      return () => cancelAnimationFrame(rafId);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '30px' }
+    );
+
+    const currentEl = cardRef.current;
+    if (currentEl) {
+      observer.observe(currentEl);
+    }
+
+    return () => {
+      if (currentEl) observer.unobserve(currentEl);
+      observer.disconnect();
+    };
+  }, []);
+
+  const staggerDelay = Math.min((index % 6) * 65, 390);
+
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+    <article
+      ref={cardRef}
+      onAnimationEnd={() => setAnimationFinished(true)}
+      style={
+        isVisible && !animationFinished
+          ? {
+              animation: `cardFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${staggerDelay}ms backwards`,
+            }
+          : undefined
+      }
+      className={`group flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-200 ease-out hover:-translate-y-1 hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 will-change-transform ${
+        isVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
       {/* Banner Image Container */}
       <div className="relative aspect-16/9 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
         <Image
@@ -58,10 +108,15 @@ export const EventCard: React.FC<EventCardProps> = ({
         />
 
         {/* Category Badge overlay */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
           <span className="inline-flex items-center rounded-md bg-zinc-900/85 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-xs">
             {event.category}
           </span>
+          {event.bannerConfig && (
+            <span className="hidden sm:inline-flex items-center rounded-md bg-zinc-900/85 px-2 py-0.5 text-[11px] font-medium text-emerald-300 backdrop-blur-xs truncate max-w-[140px]">
+              {event.bannerConfig.theme}
+            </span>
+          )}
         </div>
 
         {/* Registration Status Badge overlay */}

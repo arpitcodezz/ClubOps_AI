@@ -24,3 +24,171 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Animations v1 */
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroFadeScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes subtleDrift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -14px) scale(1.04);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes cardFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating Operational Cards Keyframes */
+@keyframes floatCard1 {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-8px) translateX(3px);
+  }
+}
+
+@keyframes floatCard2 {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(7px) translateX(-4px);
+  }
+}
+
+@keyframes floatCard3 {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-6px) translateX(-3px);
+  }
+}
+
+/* Hero Entrance Sequence (0.85s duration, 22px travel) */
+.animate-hero-badge {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.05s backwards;
+}
+
+.animate-hero-heading {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.18s backwards;
+}
+
+.animate-hero-description {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.32s backwards;
+}
+
+.animate-hero-search {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.46s backwards;
+}
+
+.animate-hero-stat-1 {
+  animation: heroFadeScale 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.58s backwards;
+}
+
+.animate-hero-stat-2 {
+  animation: heroFadeScale 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.68s backwards;
+}
+
+.animate-hero-stat-3 {
+  animation: heroFadeScale 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.78s backwards;
+}
+
+/* Floating Operational Signal Classes */
+.animate-float-1 {
+  animation: floatCard1 7s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: floatCard2 7.8s ease-in-out infinite 0.6s;
+}
+
+.animate-float-3 {
+  animation: floatCard3 8.4s ease-in-out infinite 1.2s;
+}
+
+.animate-card-entrance-1 {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.35s backwards;
+}
+
+.animate-card-entrance-2 {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.48s backwards;
+}
+
+.animate-card-entrance-3 {
+  animation: heroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.62s backwards;
+}
+
+.animate-subtle-drift {
+  animation: subtleDrift 24s ease-in-out infinite;
+}
+
+/* Dashboard Staggered Entrance Classes */
+.animate-dash-1 {
+  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s backwards;
+}
+
+.animate-dash-2 {
+  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.16s backwards;
+}
+
+.animate-dash-3 {
+  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.28s backwards;
+}
+
+.animate-dash-4 {
+  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.40s backwards;
+}
+
+.animate-dash-5 {
+  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.52s backwards;
+}
+
+/* Accessibility: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0s !important;
+    transition-duration: 0s !important;
+  }
+}

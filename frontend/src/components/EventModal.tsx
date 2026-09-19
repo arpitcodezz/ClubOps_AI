@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Event } from '../types/event';
+import { deleteCustomEvent, isCustomEvent } from '@/lib/events';
 
 interface EventModalProps {
   event: Event | null;
@@ -17,27 +20,50 @@ export const EventModal: React.FC<EventModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const router = useRouter();
   const [registeredEventId, setRegisteredEventId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Handle ESC key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        if (showDeleteConfirm) {
+          setShowDeleteConfirm(false);
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, showDeleteConfirm]);
+
+  const [prevEventId, setPrevEventId] = useState<string | null>(null);
+  if (event && event.id !== prevEventId) {
+    setPrevEventId(event.id);
+    setShowDeleteConfirm(false);
+  }
 
   if (!isOpen || !event) return null;
 
+  const isCustom = isCustomEvent(event.id);
   const isClosed = event.registrationStatus === 'Closed';
   const registered = registeredEventId === event.id;
 
   const handleRegisterClick = () => {
     if (!isClosed) {
       setRegisteredEventId(event.id);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    deleteCustomEvent(event.id);
+    setShowDeleteConfirm(false);
+    onClose();
+
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+      router.push('/dashboard/president?deleted=true');
     }
   };
 
@@ -51,12 +77,49 @@ export const EventModal: React.FC<EventModalProps> = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
+        onClick={() => {
+          if (!showDeleteConfirm) onClose();
+        }}
         aria-hidden="true"
       />
 
       {/* Modal Dialog */}
       <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        {/* Delete Confirmation Overlay */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/95 p-6 backdrop-blur-xs dark:bg-zinc-900/95">
+            <div className="max-w-md text-center space-y-4">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-rose-100 text-rose-700 text-base font-bold">
+                !
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                  Delete this event?
+                </h3>
+                <p className="mt-1.5 text-xs text-zinc-600 leading-relaxed dark:text-zinc-300">
+                  This will remove the event from the President workspace and public event discovery.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-medium text-white hover:bg-rose-700 shadow-xs transition-colors"
+                >
+                  Delete event
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Banner image */}
         <div className="relative aspect-16/7 w-full overflow-hidden bg-zinc-100 sm:aspect-21/9 dark:bg-zinc-800">
           <Image
@@ -85,6 +148,11 @@ export const EventModal: React.FC<EventModalProps> = ({
             <span className="rounded-md bg-white/90 px-2.5 py-1 text-xs font-semibold text-zinc-900 backdrop-blur-xs dark:bg-zinc-900/90 dark:text-zinc-100">
               {event.registrationStatus}
             </span>
+            {event.bannerConfig && (
+              <span className="rounded-md bg-zinc-900/85 px-2.5 py-1 text-xs font-medium text-emerald-300 backdrop-blur-xs">
+                {event.bannerConfig.theme}
+              </span>
+            )}
           </div>
         </div>
 
@@ -99,6 +167,28 @@ export const EventModal: React.FC<EventModalProps> = ({
           >
             {event.title}
           </h2>
+
+          {/* AI Headline if present */}
+          {event.headline && (
+            <p className="mt-1.5 text-sm font-medium italic text-emerald-700 dark:text-emerald-400">
+              &ldquo;{event.headline}&rdquo;
+            </p>
+          )}
+
+          {/* Event Banner Identity elements if present */}
+          {event.bannerConfig && event.bannerConfig.elements && event.bannerConfig.elements.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-medium text-zinc-400 uppercase">Visual Identity:</span>
+              {event.bannerConfig.elements.map((el) => (
+                <span
+                  key={el}
+                  className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/80 dark:text-zinc-400"
+                >
+                  {el}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Key Schedule Grid */}
           <div className="mt-5 grid grid-cols-1 gap-3 rounded-xl border border-zinc-200 bg-zinc-50/75 p-4 sm:grid-cols-2 dark:border-zinc-800 dark:bg-zinc-950/60">
@@ -120,6 +210,12 @@ export const EventModal: React.FC<EventModalProps> = ({
                 {event.fee || 'Free'}
               </p>
             </div>
+            {event.capacity && (
+              <div>
+                <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Capacity</p>
+                <p className="mt-0.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{event.capacity} Attendees</p>
+              </div>
+            )}
             {event.teamSize && (
               <div>
                 <p className="text-[11px] font-medium text-zinc-400 uppercase dark:text-zinc-500">Participation</p>
@@ -141,6 +237,18 @@ export const EventModal: React.FC<EventModalProps> = ({
               {event.description}
             </p>
           </div>
+
+          {/* Participant Notice if present */}
+          {event.participantMessage && (
+            <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Participant Notice
+              </h4>
+              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                {event.participantMessage}
+              </p>
+            </div>
+          )}
 
           {/* Tags */}
           {event.tags && event.tags.length > 0 && (
@@ -202,8 +310,30 @@ export const EventModal: React.FC<EventModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex justify-end border-t border-zinc-200 bg-zinc-50 px-6 py-3.5 dark:border-zinc-800 dark:bg-zinc-950">
+        {/* Modal Footer with Restrained Delete Action & Edit Link for custom events */}
+        <div className="flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-6 py-3.5 dark:border-zinc-800 dark:bg-zinc-950">
+          {isCustom ? (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-xs font-medium text-rose-600 hover:text-rose-800 transition-colors"
+              >
+                Delete event
+              </button>
+              <span className="text-zinc-300 dark:text-zinc-700">•</span>
+              <Link
+                href={`/dashboard/president/events/${event.id}/edit`}
+                onClick={onClose}
+                className="text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                Edit event →
+              </Link>
+            </div>
+          ) : (
+            <div />
+          )}
+
           <button
             type="button"
             onClick={onClose}
