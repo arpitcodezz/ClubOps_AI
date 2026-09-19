@@ -3,11 +3,17 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.database import engine
+from app.api.routes import tasks
 
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
+)
+
+app.include_router(
+    tasks.router,
+    prefix="/api",
 )
 
 
