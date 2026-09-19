@@ -80,6 +80,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
             >
               Coordinator Workspace
             </Link>
+            <Link
+              href="/dashboard/volunteer"
+              className="text-xs font-semibold tracking-wider text-zinc-600 uppercase transition-colors hover:text-zinc-950"
+            >
+              Volunteer Ops
+            </Link>
           </nav>
         </div>
 
@@ -153,6 +159,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateToEvents }) => {
               className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
             >
               Coordinator Workspace
+            </Link>
+            <Link
+              href="/dashboard/volunteer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-stone-100"
+            >
+              Volunteer Ops
             </Link>
           </div>
           <div className="border-t border-stone-200 pt-3">
