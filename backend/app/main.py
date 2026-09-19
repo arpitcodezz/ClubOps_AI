@@ -3,7 +3,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.db.database import engine
-from app.api.routes import tasks
+from app.api.routes import events, tasks
 
 
 app = FastAPI(
@@ -13,6 +13,11 @@ app = FastAPI(
 
 app.include_router(
     tasks.router,
+    prefix="/api",
+)
+
+app.include_router(
+    events.router,
     prefix="/api",
 )
 
