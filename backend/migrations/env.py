@@ -7,6 +7,8 @@ from app.core.config import settings
 from app.db.database import Base
 
 from app.models.user import User
+from app.models.club import Club
+from app.models.club_member import ClubMember
 
 config = context.config
 
