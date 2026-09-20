@@ -72,3 +72,56 @@ console.log('RAW API RESPONSE:', data);
 
 return Array.isArray(data) ? data : data.value ?? [];
 }
+
+export interface EventCommunicationPayload {
+  title: string;
+  description: string;
+  club_name?: string | null;
+  category?: string | null;
+  date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  venue?: string | null;
+  capacity?: number | null;
+  tags?: string[] | null;
+  intended_audience?: string | null;
+  purpose?: string | null;
+}
+
+export interface EventCommunicationAIResponse {
+  headline: string;
+  participant_announcement: string;
+  volunteer_announcement: string;
+  promotional_copy: string;
+}
+
+export async function generateEventCommunicationAI(
+  payload: EventCommunicationPayload
+): Promise<EventCommunicationAIResponse> {
+  const response = await fetch(`${API_BASE_URL}/ai/event-communication`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    let message = 'Failed to generate event communication';
+
+    try {
+      const errorData = await response.json();
+      message =
+        typeof errorData.detail === 'string'
+          ? errorData.detail
+          : JSON.stringify(errorData.detail || errorData);
+    } catch {
+      // Keep default message
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}

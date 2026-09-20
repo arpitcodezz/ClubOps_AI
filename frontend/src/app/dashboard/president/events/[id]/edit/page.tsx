@@ -4,6 +4,7 @@ import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { generateEventCommunicationAI } from '@/lib/api';
 import { EventBannerConfig, EventCategory } from '@/types/event';
 import {
   CATEGORY_BANNERS,
@@ -51,6 +52,8 @@ export default function EditEventPage({ params }: EditEventPageProps) {
   const [tagsInput, setTagsInput] = useState('');
 
   // AI Communication State
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [headline, setHeadline] = useState('');
   const [participantMessage, setParticipantMessage] = useState('');
   const [volunteerMessage, setVolunteerMessage] = useState('');
@@ -116,7 +119,7 @@ export default function EditEventPage({ params }: EditEventPageProps) {
   };
 
   // Generate AI Communication
-  const handleGenerateAI = () => {
+  const handleGenerateAI = async () => {
     const newErrors: Record<string, string> = {};
     if (!title.trim()) newErrors.title = 'Please enter an event name first.';
     if (!description.trim()) newErrors.description = 'Please enter a description for AI context.';
@@ -128,18 +131,32 @@ export default function EditEventPage({ params }: EditEventPageProps) {
     }
 
     setErrors({});
-    const generated = generateEventCommunication({
-      title,
-      category,
-      description,
-      venue,
-      date,
-      clubName,
-    });
+    setAiError(null);
+    setIsGeneratingAI(true);
 
-    setHeadline(generated.headline);
-    setParticipantMessage(generated.participantMessage);
-    setVolunteerMessage(generated.volunteerMessage);
+    try {
+      const generated = await generateEventCommunicationAI({
+        title,
+        description,
+        club_name: clubName || undefined,
+        category,
+        date: date || undefined,
+        start_time: startTime || undefined,
+        end_time: endTime || undefined,
+        venue: venue || undefined,
+        capacity: typeof capacity === 'number' ? capacity : undefined,
+        tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+      });
+
+      setHeadline(generated.headline);
+      setParticipantMessage(generated.participant_announcement);
+      setVolunteerMessage(generated.volunteer_announcement);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to generate AI communication';
+      setAiError(errMsg);
+    } finally {
+      setIsGeneratingAI(false);
+    }
   };
 
   // Regenerate Event-Specific Banner
@@ -584,12 +601,20 @@ export default function EditEventPage({ params }: EditEventPageProps) {
                   <button
                     type="button"
                     onClick={handleGenerateAI}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-900 shadow-2xs hover:bg-stone-50 transition-colors self-start sm:self-auto"
+                    disabled={isGeneratingAI}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-900 shadow-2xs hover:bg-stone-50 transition-colors self-start sm:self-auto disabled:opacity-60 cursor-pointer"
                   >
-                    <span>Regenerate copy</span>
-                    <span aria-hidden="true">→</span>
+                    <span>{isGeneratingAI ? 'Generating with AI...' : 'Regenerate copy'}</span>
+                    {!isGeneratingAI && <span aria-hidden="true">→</span>}
                   </button>
                 </div>
+
+                {aiError && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900">
+                    <p className="font-semibold">AI Service Notice</p>
+                    <p className="mt-0.5 text-amber-800">{aiError}</p>
+                  </div>
+                )}
 
                 <div className="space-y-4 rounded-2xl border border-stone-200 bg-stone-50/60 p-5">
                   <div>
