@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Event } from '../types/event';
-import { deleteCustomEvent, isCustomEvent } from '@/lib/events';
+import { deleteEvent } from '@/lib/api';
 
 interface EventModalProps {
   event: Event | null;
@@ -47,7 +47,6 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   if (!isOpen || !event) return null;
 
-  const isCustom = isCustomEvent(event.id);
   const isClosed = event.registrationStatus === 'Closed';
   const registered = registeredEventId === event.id;
 
@@ -57,15 +56,28 @@ export const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  const handleDeleteConfirm = () => {
-    deleteCustomEvent(event.id);
+const handleDeleteConfirm = async () => {
+  try {
+    await deleteEvent(event.id);
+
     setShowDeleteConfirm(false);
     onClose();
 
-    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+    if (
+      typeof window !== 'undefined' &&
+      window.location.pathname.startsWith('/dashboard')
+    ) {
       router.push('/dashboard/president?deleted=true');
     }
-  };
+  } catch (error) {
+    console.error('Failed to delete event:', error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : 'Failed to delete event'
+    );
+  }
+};
 
   return (
     <div
@@ -109,12 +121,12 @@ export const EventModal: React.FC<EventModalProps> = ({
                   Cancel
                 </button>
                 <button
-                  type="button"
-                  onClick={handleDeleteConfirm}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-medium text-white hover:bg-rose-700 shadow-xs transition-colors"
-                >
-                  Delete event
-                </button>
+  type="button"
+  onClick={() => setShowDeleteConfirm(true)}
+  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-medium text-white shadow-xs transition-colors hover:bg-rose-700"
+>
+  Delete event
+</button>
               </div>
             </div>
           </div>
@@ -314,27 +326,25 @@ export const EventModal: React.FC<EventModalProps> = ({
 
         {/* Modal Footer with Restrained Delete Action & Edit Link */}
         <div className="flex items-center justify-between border-t border-stone-200 bg-stone-50/70 px-6 py-3.5">
-          {isCustom ? (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-xs font-medium text-rose-700 hover:text-rose-900 transition-colors"
-              >
-                Delete event
-              </button>
-              <span className="text-stone-300">•</span>
-              <Link
-                href={`/dashboard/president/events/${event.id}/edit`}
-                onClick={onClose}
-                className="text-xs font-medium text-zinc-600 hover:text-zinc-950 transition-colors"
-              >
-                Edit event →
-              </Link>
-            </div>
-          ) : (
-            <div />
-          )}
+         <div className="flex items-center gap-3">
+  <button
+    type="button"
+    onClick={() => setShowDeleteConfirm(true)}
+    className="text-xs font-medium text-rose-700 hover:text-rose-900 transition-colors"
+  >
+    Delete event
+  </button>
+
+  <span className="text-stone-300">•</span>
+
+  <Link
+    href={`/dashboard/president/events/${event.id}/edit`}
+    onClick={onClose}
+    className="text-xs font-medium text-zinc-600 hover:text-zinc-950 transition-colors"
+  >
+    Edit event →
+  </Link>
+</div>
 
           <button
             type="button"

@@ -1,372 +1,442 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getEvents } from '../lib/api';
-import { Event, EventCategory } from '../types/event';
-import { Navbar } from '../components/Navbar';
-import { Hero } from '../components/Hero';
-import { SearchBar } from '../components/SearchBar';
-import { EventFilters, FilterCategory } from '../components/EventFilters';
-import { FeaturedEvent } from '../components/FeaturedEvent';
-import { EventGrid } from '../components/EventGrid';
-import { EventModal } from '../components/EventModal';
-import { Footer } from '../components/Footer';
+import React, { useEffect, useState } from 'react';
+import { MOCK_PRESIDENT_DASHBOARD } from '@/data/mockDashboard';
+import { getEvents, getEvent, EventResponse } from '@/lib/api';
+import { Event } from '@/types/event';
+import {
+  NextEventData,
+  UpcomingEventItem,
+} from '@/types/dashboard';
 
-function mapEventCategory(eventType?: string | null): EventCategory {
-  switch (eventType?.toUpperCase()) {
-    case 'TECHNICAL':
-      return 'Technical';
-    case 'CULTURAL':
-      return 'Cultural';
-    case 'SPORTS':
-      return 'Sports';
-    case 'WORKSHOP':
-      return 'Workshop';
-    case 'COMPETITION':
-      return 'Competition';
-    case 'HACKATHON':
-      return 'Technical';
-    default:
-      return 'Workshop';
-  }
+import { PresidentNav } from '@/components/dashboard/PresidentNav';
+import { HeroOverview } from '@/components/dashboard/HeroOverview';
+import { NextEventCard } from '@/components/dashboard/NextEventCard';
+import { OperationsStats } from '@/components/dashboard/OperationsStats';
+import { UpcomingEventsList } from '@/components/dashboard/UpcomingEventsList';
+import { AiOperations } from '@/components/dashboard/AiOperations';
+import { RisksAttention } from '@/components/dashboard/RisksAttention';
+import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { DashboardFooter } from '@/components/dashboard/DashboardFooter';
+import { EventModal } from '@/components/EventModal';
+
+/**
+ * Convert a backend API event into the Event shape
+ * used by the dashboard and EventModal.
+ */
+function mapBackendEventToDashboardEvent(e: EventResponse): Event {
+  const start = new Date(e.start_datetime);
+  const end = new Date(e.end_datetime);
+
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  return {
+    id: String(e.id),
+    title: e.title,
+
+    clubName: `Club ${e.club_id}`,
+
+    category: (e.event_type || 'Technical') as Event['category'],
+
+    date: formatDate(start),
+
+    rawDate: start.toISOString().split('T')[0],
+
+    time: `${formatTime(start)} - ${formatTime(end)}`,
+
+    startTime: start.toTimeString().slice(0, 5),
+
+    endTime: end.toTimeString().slice(0, 5),
+
+    venue: e.venue || 'TBA',
+
+    bannerUrl:
+      e.banner_url ||
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+
+    registrationStatus:
+      e.status === 'closed'
+        ? 'Closed'
+        : e.status === 'waitlist'
+          ? 'Waitlist'
+          : 'Open',
+
+    description: e.description || '',
+
+    shortDescription: e.description || '',
+
+    headline: e.headline || undefined,
+
+    capacity: e.capacity ?? undefined,
+
+    createdAt: e.created_at,
+
+    published: e.status !== 'draft',
+  };
 }
 
-export default function HomePage() {
-  const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('All');
-  const [modalEvent, setModalEvent] = useState<Event | null>(null);
-  const [modalMode, setModalMode] = useState<'details' | 'register'>('details');
+export default function PresidentDashboardPage() {
+  const [dashboardData, setDashboardData] = useState(
+    MOCK_PRESIDENT_DASHBOARD
+  );
+
+  const [toastMessage, setToastMessage] = useState<{
+    title: string;
+    subtitle: string;
+  } | null>(null);
+
+  const [selectedModalEvent, setSelectedModalEvent] =
+    useState<Event | null>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Sync with localStorage on client mount & listen for event additions
- useEffect(() => {
-  const loadEvents = async () => {
-    try {
-      const backendEvents = await getEvents();
-      console.log('BACKEND EVENTS:', backendEvents);
+  /**
+   * Load events from backend and synchronize dashboard.
+   */
+  useEffect(() => {
+    let mounted = true;
 
-      const mappedEvents: Event[] = backendEvents.map((event) => ({
-        id: String(event.id),
-        title: event.title,
-        clubName: `Club ${event.club_id}`,
-        category: mapEventCategory(event.event_type),
-        date: new Date(event.start_datetime).toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-        }),
-        rawDate: event.start_datetime,
-        time: new Date(event.start_datetime).toLocaleTimeString('en-IN', {
-          hour: 'numeric',
-          minute: '2-digit',
-        }),
-        venue: event.venue || 'Venue TBA',
-        bannerUrl: event.banner_url || '',
-        registrationStatus:
-          event.status === 'PUBLISHED' ? 'Open' : 'Closed',
-        description: event.description || '',
-        shortDescription: event.description || '',
-        headline: event.headline || undefined,
-        capacity: event.capacity || undefined,
-        createdAt: event.created_at,
-        published: event.status === 'PUBLISHED',
-        startTime: event.start_datetime,
-        endTime: event.end_datetime,
-      }));
+    const refreshData = async () => {
+      try {
+        const apiEvents = await getEvents();
 
-      setAllEvents(mappedEvents);
-    } catch (error) {
-      console.error('Failed to load backend events:', error);
-    }
-  };
+        if (!mounted) return;
 
-  loadEvents();
-}, []);
+        const upcomingItems: UpcomingEventItem[] = apiEvents.map((e) => ({
+          id: String(e.id),
 
-  const eventsSectionRef = useRef<HTMLElement>(null);
+          name: e.title,
 
-  const scrollToEvents = () => {
-    if (eventsSectionRef.current) {
-      eventsSectionRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+          date: new Date(e.start_datetime).toLocaleDateString(
+            'en-GB',
+            {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            }
+          ),
 
-  // Category event counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<FilterCategory, number> = {
-      All: allEvents.length,
-      Technical: 0,
-      Cultural: 0,
-      Sports: 0,
-      Workshop: 0,
-      Competition: 0,
-    };
+          volunteers: 28,
 
-    allEvents.forEach((event) => {
-      if (counts[event.category] !== undefined) {
-        counts[event.category]++;
-      }
-    });
+          /**
+           * Keep this compatible with EventStatus.
+           * Backend values that are not recognized are shown as
+           * "On track".
+           */
+          status:
+            e.status === 'attention'
+              ? 'Attention'
+              : e.status === 'planning'
+                ? 'Planning'
+                : 'On track',
 
-    return counts;
-  }, [allEvents]);
+          category: (e.event_type ||
+            'Technical') as Event['category'],
+        }));
 
-  // Filtered events based on search query and category
-  const filteredEvents = useMemo(() => {
-    return allEvents.filter((event) => {
-      // Category check
-      if (selectedCategory !== 'All' && event.category !== selectedCategory) {
-        return false;
-      }
+        let activeNextEvent: NextEventData =
+          MOCK_PRESIDENT_DASHBOARD.nextEvent;
 
-      // Search query check
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchesTitle = event.title.toLowerCase().includes(query);
-        const matchesClub = event.clubName.toLowerCase().includes(query);
-        const matchesVenue = event.venue.toLowerCase().includes(query);
-        const matchesDescription = event.shortDescription.toLowerCase().includes(query);
-        const matchesHeadline = event.headline?.toLowerCase().includes(query);
-        const matchesTags = event.tags?.some((t) => t.toLowerCase().includes(query));
+        if (apiEvents.length > 0) {
+          const topEvent = apiEvents[0];
 
-        return (
-          matchesTitle ||
-          matchesClub ||
-          matchesVenue ||
-          matchesDescription ||
-          Boolean(matchesHeadline) ||
-          Boolean(matchesTags)
+          activeNextEvent = {
+            title: topEvent.title,
+
+            date: new Date(
+              topEvent.start_datetime
+            ).toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+            }),
+
+            venue: topEvent.venue || 'TBA',
+
+            volunteers: 28,
+
+            openTasks: 16,
+
+            status:
+              topEvent.status === 'attention'
+                ? 'Attention'
+                : topEvent.status === 'planning'
+                  ? 'Planning'
+                  : 'On track',
+          };
+        }
+
+        const totalUpcomingCount = String(
+          apiEvents.length
+        ).padStart(2, '0');
+
+        setDashboardData({
+          ...MOCK_PRESIDENT_DASHBOARD,
+
+          nextEvent: activeNextEvent,
+
+          stats: MOCK_PRESIDENT_DASHBOARD.stats.map((s) =>
+            s.label === 'UPCOMING EVENTS'
+              ? {
+                  ...s,
+                  value: totalUpcomingCount,
+                  context: 'From ClubOps database',
+                }
+              : s
+          ),
+
+          upcomingEvents: upcomingItems,
+        });
+      } catch (error) {
+        console.error(
+          'Failed to load dashboard events:',
+          error
         );
       }
+    };
 
-      return true;
-    });
-  }, [allEvents, searchQuery, selectedCategory]);
+    /**
+     * Read query parameters after dashboard mounts.
+     */
+    const handleQueryParams = () => {
+      if (typeof window === 'undefined') return;
 
-  const handleViewDetails = (event: Event) => {
-    setModalEvent(event);
-    setModalMode('details');
-    setIsModalOpen(true);
-  };
+      const urlParams = new URLSearchParams(
+        window.location.search
+      );
 
-  const handleRegister = (event: Event) => {
-    setModalEvent(event);
-    setModalMode('register');
-    setIsModalOpen(true);
-  };
-
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setSelectedCategory('All');
-  };
-
-  const isFiltered = searchQuery.trim() !== '' || selectedCategory !== 'All';
-
-  // HackNova 2026 as premier featured event
-  const featuredEvent = useMemo(() => {
-    return allEvents.find((e) => e.title.toLowerCase().includes('hacknova')) || allEvents[0] || null;
-  }, [allEvents]);
-
-  // Distinct clubs list for the Clubs directory
-  const campusClubs = useMemo(() => {
-    const clubMap = new Map<string, { name: string; category: string; count: number }>();
-    allEvents.forEach((e) => {
-      const existing = clubMap.get(e.clubName);
-      if (existing) {
-        existing.count++;
-      } else {
-        clubMap.set(e.clubName, {
-          name: e.clubName,
-          category: e.category,
-          count: 1,
+      if (urlParams.get('published') === 'true') {
+        setToastMessage({
+          title: 'Event published successfully.',
+          subtitle:
+            'It is now live on the public discovery portal.',
         });
+
+        window.history.replaceState(
+          {},
+          '',
+          window.location.pathname
+        );
+      } else if (urlParams.get('updated') === 'true') {
+        setToastMessage({
+          title: 'Event updated successfully.',
+          subtitle:
+            'All modifications have been synchronized across ClubOps.',
+        });
+
+        window.history.replaceState(
+          {},
+          '',
+          window.location.pathname
+        );
+      } else if (urlParams.get('deleted') === 'true') {
+        setToastMessage({
+          title: 'Event deleted successfully.',
+          subtitle:
+            'The event has been removed from workspace and discovery.',
+        });
+
+        window.history.replaceState(
+          {},
+          '',
+          window.location.pathname
+        );
       }
-    });
-    return Array.from(clubMap.values());
-  }, [allEvents]);
+    };
+
+    /**
+     * Initial load.
+     */
+    handleQueryParams();
+    refreshData();
+
+    /**
+     * Listen for updates from other parts of ClubOps.
+     */
+    const handleEventsUpdated = () => {
+      refreshData();
+    };
+
+    window.addEventListener(
+      'clubops_events_updated',
+      handleEventsUpdated
+    );
+
+    window.addEventListener('storage', handleEventsUpdated);
+
+    return () => {
+      mounted = false;
+
+      window.removeEventListener(
+        'clubops_events_updated',
+        handleEventsUpdated
+      );
+
+      window.removeEventListener(
+        'storage',
+        handleEventsUpdated
+      );
+    };
+  }, []);
+
+  /**
+   * Open an event using its REAL backend ID.
+   *
+   * The dashboard list only contains UpcomingEventItem summaries.
+   * Therefore we fetch the complete event from:
+   *
+   * GET /api/events/{id}/
+   */
+  const handleOpenEvent = async (
+    eventNameOrItem: string | UpcomingEventItem
+  ) => {
+    const eventId =
+      typeof eventNameOrItem === 'object'
+        ? eventNameOrItem.id
+        : '';
+
+    const titleToFind =
+      typeof eventNameOrItem === 'string'
+        ? eventNameOrItem
+        : eventNameOrItem.name;
+
+    try {
+      let apiEvent: EventResponse | null = null;
+
+      /**
+       * Preferred path:
+       * use the backend ID supplied by UpcomingEventItem.
+       */
+      if (eventId) {
+        apiEvent = await getEvent(eventId);
+      } else {
+        /**
+         * Fallback for callers that only provide an event name.
+         */
+        const allEvents = await getEvents();
+
+        apiEvent =
+          allEvents.find(
+            (e) =>
+              e.title.toLowerCase() ===
+              titleToFind.toLowerCase()
+          ) || null;
+      }
+
+      if (!apiEvent) {
+        console.warn(
+          'Event not found:',
+          titleToFind
+        );
+        return;
+      }
+
+      /**
+       * Convert the complete API object to the Event type
+       * expected by EventModal.
+       */
+      const fullEvent =
+        mapBackendEventToDashboardEvent(apiEvent);
+
+      setSelectedModalEvent(fullEvent);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error(
+        'Failed to open event:',
+        error
+      );
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fcfbf9] text-zinc-950 selection:bg-zinc-900 selection:text-white">
-      {/* Top Navigation */}
-      <Navbar onNavigateToEvents={scrollToEvents} />
+    <>
+      <PresidentNav />
 
-      <main className="flex-1">
-        {/* Compact Editorial Hero */}
-        <Hero
-          searchQuery={searchQuery}
-          onSearchChange={(q) => {
-            setSearchQuery(q);
-          }}
-          onExploreClick={scrollToEvents}
-          totalEventsCount={allEvents.length}
-        />
+      <main className="min-h-screen bg-[#fcfbf9]">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <HeroOverview
+            data={dashboardData}
+          />
 
-        {/* Featured Event Section (48-64px spacing after hero) */}
-        {featuredEvent && !isFiltered && (
-          <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 mt-12 sm:mt-14 lg:mt-16">
-            <FeaturedEvent
-              event={featuredEvent}
-              onViewDetails={handleViewDetails}
-              onRegister={handleRegister}
-            />
-          </div>
-        )}
-
-        {/* Upcoming Events (72-96px spacing after featured) */}
-        <section
-          id="events"
-          ref={eventsSectionRef}
-          className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 mt-16 sm:mt-20 lg:mt-24 pb-16"
-        >
-          {/* Section Header: Tighter with search horizontally aligned on desktop */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 pb-5 border-b border-stone-200/80">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2.5 mb-1.5">
-                <span className="text-[11px] font-semibold tracking-widest text-stone-500 uppercase">
-                  • UPCOMING EVENTS
-                </span>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-stone-700">
-                  {String(filteredEvents.length).padStart(2, '0')} EVENTS
-                </span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-serif tracking-tight text-zinc-950 leading-tight">
-                Events worth showing up for.
-              </h2>
-              <p className="mt-1.5 text-xs sm:text-sm text-stone-600 font-sans leading-relaxed">
-                Browse verified campus workshops, hackathons, competitions, and student-led experiences.
-              </p>
-            </div>
-
-            {/* Filter Search Field */}
-            <div className="w-full md:w-80 shrink-0">
-              <SearchBar
-                id="discovery-search-input"
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Search events, clubs, venues..."
-              />
-            </div>
-          </div>
-
-          {/* Category Filter Chips (24px gap after header) */}
           <div className="mt-6">
-            <EventFilters
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-              categoryCounts={categoryCounts}
+            <NextEventCard
+              event={dashboardData.nextEvent}
+              onSelectEvent={handleOpenEvent}
             />
           </div>
 
-          {/* Active Filter Indicators */}
-          {isFiltered && (
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-stone-600">
-              <span className="font-medium text-stone-500">Active filters:</span>
-              {selectedCategory !== 'All' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 border border-stone-200 px-3 py-1 text-stone-800">
-                  Category: <span className="font-semibold text-zinc-950">{selectedCategory}</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory('All')}
-                    className="ml-1 text-stone-400 hover:text-zinc-950 transition-colors"
-                    aria-label="Remove category filter"
-                  >
-                    ✕
-                  </button>
-                </span>
-              )}
-              {searchQuery.trim() !== '' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 border border-stone-200 px-3 py-1 text-stone-800">
-                  Search: <span className="font-semibold text-zinc-950">&ldquo;{searchQuery}&rdquo;</span>
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="ml-1 text-stone-400 hover:text-zinc-950 transition-colors"
-                    aria-label="Clear search text"
-                  >
-                    ✕
-                  </button>
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="text-xs font-semibold text-zinc-950 underline underline-offset-4 hover:text-stone-700 transition-colors ml-1"
-              >
-                Reset all
-              </button>
-            </div>
-          )}
-
-          {/* Event Rows (32-40px gap after filters) */}
-          <div className="mt-8 sm:mt-10">
-            <EventGrid
-              events={filteredEvents}
-              onViewDetails={handleViewDetails}
-              onRegister={handleRegister}
-              onResetFilters={handleResetFilters}
-              isFiltered={isFiltered}
+          <div className="mt-6">
+            <OperationsStats
+              stats={dashboardData.stats}
             />
           </div>
-        </section>
 
-        {/* Campus Clubs Directory Section */}
-        <section
-          id="clubs"
-          className="border-t border-stone-200/80 bg-[#f7f5f0]/60 py-16"
-        >
-          <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
-            <div className="max-w-2xl">
-              <span className="text-[11px] font-semibold tracking-widest text-stone-500 uppercase">
-                • DIRECTORY
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-serif tracking-tight text-zinc-950 mt-1">
-                Student societies &amp; organizing bodies.
-              </h2>
-              <p className="mt-1.5 text-xs sm:text-sm text-stone-600 font-sans">
-                Official campus chapters and student-led organizations running verified activities.
-              </p>
-            </div>
-
-            {/* Clean 3-column directory list */}
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {campusClubs.map((club) => (
-                <div
-                  key={club.name}
-                  className="flex items-center justify-between rounded-xl border border-stone-200/80 bg-white px-4 py-3 shadow-2xs hover:border-stone-300 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-[11px] font-bold text-zinc-800 tracking-wider">
-                      {club.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-zinc-950">
-                        {club.name}
-                      </h4>
-                      <p className="text-[11px] text-stone-500">
-                        {club.category} Society
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-stone-500 font-medium">
-                    {club.count} {club.count === 1 ? 'event' : 'events'}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="mt-6">
+            <UpcomingEventsList
+              events={dashboardData.upcomingEvents}
+              onSelectEvent={handleOpenEvent}
+            />
           </div>
-        </section>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <AiOperations
+              {...dashboardData.aiOperations}
+            />
+
+            <RisksAttention
+              {...dashboardData.risksAttention}
+            />
+          </div>
+
+          <div className="mt-6">
+            <RecentActivity
+              activities={dashboardData.recentActivity}
+            />
+          </div>
+        </div>
+
+        <DashboardFooter />
       </main>
 
-      {/* Event Details & Registration Modal */}
-      <EventModal
-        event={modalEvent}
-        mode={modalMode}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm rounded-2xl border border-stone-200 bg-white p-4 shadow-xl">
+          <p className="text-sm font-semibold text-zinc-950">
+            {toastMessage.title}
+          </p>
 
-      {/* Editorial Footer */}
-      <Footer />
-    </div>
+          <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+            {toastMessage.subtitle}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="mt-3 text-xs font-medium text-zinc-700 hover:text-zinc-950"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <EventModal
+        event={selectedModalEvent}
+        mode="details"
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedModalEvent(null);
+        }}
+      />
+    </>
   );
 }

@@ -72,3 +72,46 @@ console.log('RAW API RESPONSE:', data);
 
 return Array.isArray(data) ? data : data.value ?? [];
 }
+
+export async function deleteEvent(id: string | number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/events/${id}/`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    let message = 'Failed to delete event';
+
+    try {
+      const errorData = await response.json();
+      message =
+        typeof errorData.detail === 'string'
+          ? errorData.detail
+          : JSON.stringify(errorData.detail || errorData);
+    } catch {
+      // Keep default message
+    }
+
+    throw new Error(message);
+  }
+}
+
+export async function getEvent(
+  id: string | number
+): Promise<EventResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/events/${id}/`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch event');
+  }
+
+  return response.json();
+}

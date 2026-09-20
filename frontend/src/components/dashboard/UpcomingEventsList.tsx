@@ -42,7 +42,7 @@ export const UpcomingEventsList: React.FC<UpcomingEventsListProps> = ({
       <div className="rounded-2xl border border-stone-200/90 bg-white p-2 sm:p-4 shadow-xs">
         <div className="divide-y divide-stone-100">
           {events.map((event) => {
-            const statusConfig = statusPillStyles[event.status];
+            const statusConfig = statusPillStyles[event.status] ?? statusPillStyles['Planning'];
 
             return (
               <div

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { MOCK_PRESIDENT_DASHBOARD } from '@/data/mockDashboard';
-import { getAllEvents } from '@/lib/events';
-import { Event } from '@/types/event';
+import { getEvents, EventResponse } from '@/lib/api';
+import { Event, EventCategory } from '@/types/event';
 import { NextEventData, OperationStat, UpcomingEventItem } from '@/types/dashboard';
 import { PresidentNav } from '@/components/dashboard/PresidentNav';
 import { HeroOverview } from '@/components/dashboard/HeroOverview';
@@ -16,6 +16,99 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { DashboardFooter } from '@/components/dashboard/DashboardFooter';
 import { EventModal } from '@/components/EventModal';
 
+
+function normalizeEventStatus(value: unknown): EventStatus {
+  const status = String(value || '').trim().toLowerCase();
+
+  switch (status) {
+    case 'published':
+    case 'open':
+    case 'active':
+    case 'on track':
+      return 'On track';
+
+    case 'attention':
+    case 'filling fast':
+    case 'waitlist':
+      return 'Attention';
+
+    case 'draft':
+    case 'planning':
+      return 'Planning';
+
+    case 'closed':
+      return 'Planning';
+
+    default:
+      return 'Planning';
+  }
+}
+
+function normalizeEventCategory(value: unknown): EventCategory {
+  const category = String(value || '').trim().toLowerCase();
+
+  switch (category) {
+    case 'technical':
+      return 'Technical';
+    case 'cultural':
+      return 'Cultural';
+    case 'sports':
+      return 'Sports';
+    case 'workshop':
+      return 'Workshop';
+    case 'competition':
+      return 'Competition';
+    default:
+      return 'Technical';
+  }
+}
+
+function mapBackendEventToDashboardEvent(e: any): Event {
+  const start = new Date(e.start_datetime);
+  const end = new Date(e.end_datetime);
+
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  return {
+    id: String(e.id),
+    title: e.title,
+    clubName: `Club ${e.club_id}`,
+    category: normalizeEventCategory(e.event_type),
+    date: formatDate(start),
+    rawDate: start.toISOString().split('T')[0],
+    time: `${formatTime(start)} - ${formatTime(end)}`,
+    startTime: start.toTimeString().slice(0, 5),
+    endTime: end.toTimeString().slice(0, 5),
+    venue: e.venue || 'TBA',
+    bannerUrl:
+      e.banner_url ||
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+    registrationStatus:
+      e.status === 'closed'
+        ? 'Closed'
+        : e.status === 'waitlist'
+          ? 'Waitlist'
+          : 'Open',
+    description: e.description || '',
+    shortDescription: e.description || '',
+    headline: e.headline || undefined,
+    capacity: e.capacity || undefined,
+    createdAt: e.created_at,
+    published: e.status !== 'draft',
+  };
+}
+
 export default function PresidentDashboardPage() {
   const [dashboardData, setDashboardData] = useState(MOCK_PRESIDENT_DASHBOARD);
   const [toastMessage, setToastMessage] = useState<{ title: string; subtitle: string } | null>(null);
@@ -23,59 +116,72 @@ export default function PresidentDashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Sync dashboard with the unified event registry and detect status query params
+  // Sync dashboard with the unified event registry and detect status query params
   useEffect(() => {
-    const refreshData = () => {
-      const allEvents = getAllEvents();
+    const refreshData = async () => {
+      try {
+        const apiEvents = await getEvents();
 
-      // Convert unified events to upcoming event items
-      const upcomingItems: UpcomingEventItem[] = allEvents.map((e) => ({
-        id: e.id,
-        name: e.title,
-        date: e.date,
-        volunteers: e.volunteersNeeded || 28,
-        status: 'On track',
-        category: e.category,
-      }));
+        const upcomingItems: UpcomingEventItem[] = apiEvents.map((e) => ({
+          id: String(e.id),
+          name: e.title,
+          date: new Date(e.start_datetime).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }),
+          volunteers: 28,
+          status: normalizeEventStatus(e.status),
+          category: normalizeEventCategory(e.event_type),
+        }));
 
-      // Compute Next Event from the first upcoming event
-      let activeNextEvent: NextEventData = MOCK_PRESIDENT_DASHBOARD.nextEvent;
-      if (allEvents.length > 0) {
-        const topEvent = allEvents[0];
-        activeNextEvent = {
-          title: topEvent.title,
-          date: topEvent.date,
-          venue: topEvent.venue,
-          volunteers: topEvent.volunteersNeeded || 32,
-          openTasks: topEvent.openTasksCount || 16,
-          status: 'On track',
-        };
-      }
+        let activeNextEvent: NextEventData =
+          MOCK_PRESIDENT_DASHBOARD.nextEvent;
 
-      // Dynamically compute stats from unified events
-      const totalUpcomingCount = allEvents.length.toString().padStart(2, '0');
-      const uniqueClubsCount = new Set(allEvents.map((e) => e.clubName)).size;
-      const updatedStats: OperationStat[] = MOCK_PRESIDENT_DASHBOARD.stats.map((s) => {
-        if (s.label === 'UPCOMING EVENTS') {
-          return {
-            ...s,
-            value: totalUpcomingCount,
-            context: `Across ${uniqueClubsCount} registered clubs`,
+        if (apiEvents.length > 0) {
+          const topEvent = apiEvents[0];
+
+          activeNextEvent = {
+            title: topEvent.title,
+            date: new Date(topEvent.start_datetime).toLocaleDateString(
+              'en-GB',
+              {
+                day: '2-digit',
+                month: 'short',
+              }
+            ),
+            venue: topEvent.venue || 'TBA',
+            volunteers: 28,
+            openTasks: 16,
+            status: normalizeEventStatus(topEvent.status),
           };
         }
-        return s;
-      });
 
-      setDashboardData({
-        ...MOCK_PRESIDENT_DASHBOARD,
-        nextEvent: activeNextEvent,
-        stats: updatedStats,
-        upcomingEvents: upcomingItems,
-      });
+        const totalUpcomingCount = String(apiEvents.length).padStart(2, '0');
+
+        setDashboardData({
+          ...MOCK_PRESIDENT_DASHBOARD,
+          nextEvent: activeNextEvent,
+          stats: MOCK_PRESIDENT_DASHBOARD.stats.map((s) =>
+            s.label === 'UPCOMING EVENTS'
+              ? {
+                  ...s,
+                  value: totalUpcomingCount,
+                  context: 'From ClubOps database',
+                }
+              : s
+          ),
+          upcomingEvents: upcomingItems,
+        });
+      } catch (error) {
+        console.error('Failed to load dashboard events:', error);
+      }
     };
 
     const rafId = requestAnimationFrame(() => {
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
+
         if (urlParams.get('published') === 'true') {
           setToastMessage({
             title: 'Event published successfully.',
@@ -95,52 +201,67 @@ export default function PresidentDashboardPage() {
           });
           window.history.replaceState({}, '', window.location.pathname);
         }
+
+        refreshData();
       }
-      refreshData();
     });
 
     window.addEventListener('clubops_events_updated', refreshData);
     window.addEventListener('storage', refreshData);
+
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener('clubops_events_updated', refreshData);
+      window.removeEventListener(
+        'clubops_events_updated',
+        refreshData
+      );
       window.removeEventListener('storage', refreshData);
     };
   }, []);
 
-  // Handle viewing event details modal from dashboard
-  const handleOpenEvent = (eventNameOrItem: string | UpcomingEventItem) => {
-    const all = getAllEvents();
-    const eventId = typeof eventNameOrItem === 'object' ? eventNameOrItem.id : '';
-    const titleToFind = typeof eventNameOrItem === 'string' ? eventNameOrItem : eventNameOrItem.name;
+  // Handle viewing event details from the API-backed dashboard
+  const handleOpenEvent = (
+    eventNameOrItem: string | UpcomingEventItem
+  ) => {
+  const eventId =
+    typeof eventNameOrItem === 'object' ? eventNameOrItem.id : '';
 
-    const found = all.find(
-      (e) =>
-        (eventId && e.id === eventId) ||
-        e.title.toLowerCase() === titleToFind.toLowerCase()
-    );
+  const titleToFind =
+    typeof eventNameOrItem === 'string'
+      ? eventNameOrItem
+      : eventNameOrItem.name;
 
-    if (found) {
-      setSelectedModalEvent(found);
-      setIsModalOpen(true);
-    } else {
-      // Fallback synthetic event if not found
-      setSelectedModalEvent({
-        id: 'dash-preview',
-        title: titleToFind,
-        clubName: 'Apex University Council',
-        category: 'Technical',
-        date: typeof eventNameOrItem === 'object' ? eventNameOrItem.date : '24 OCT',
-        time: '10:00 AM - 06:00 PM',
-        venue: 'Main Auditorium',
-        bannerUrl: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-        registrationStatus: 'Open',
-        description: 'Comprehensive campus operations scheduled for student club participation.',
-        shortDescription: 'Upcoming campus event organized by student council organizations.',
-      });
-      setIsModalOpen(true);
-    }
+  // Find the event currently loaded into the dashboard.
+  const found = dashboardData.upcomingEvents.find(
+    (event) =>
+      (eventId && event.id === eventId) ||
+      event.name.toLowerCase() === titleToFind.toLowerCase()
+  );
+
+  if (!found) {
+    console.warn('Event not found:', titleToFind);
+    return;
+  }
+
+  const selectedEvent: Event = {
+    id: String(found.id),
+    title: found.name,
+    clubName: 'Apex University Council',
+    category: found.category || 'Technical',
+    date: found.date,
+    rawDate: found.date,
+    time: '10:00 AM - 06:00 PM',
+    venue: 'Main Auditorium',
+    bannerUrl:
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
+    registrationStatus: 'Open',
+    description: 'Event details loaded from the ClubOps API.',
+    shortDescription: 'Upcoming campus event.',
   };
+
+  setSelectedModalEvent(selectedEvent);
+  setIsModalOpen(true);
+};
 
   return (
     <div className="min-h-screen bg-[#fcfbf9] text-zinc-950 selection:bg-zinc-900 selection:text-white">
