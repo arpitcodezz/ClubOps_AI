@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Event, RegistrationStatus } from '../types/event';
 
@@ -45,54 +45,10 @@ export const EventCard: React.FC<EventCardProps> = ({
 }) => {
   const statusConfig = statusBadgeStyles[event.registrationStatus];
   const isClosed = event.registrationStatus === 'Closed';
-
-  const [isVisible, setIsVisible] = useState(false);
-  const cardRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (!('IntersectionObserver' in window)) {
-      const rafId = requestAnimationFrame(() => setIsVisible(true));
-      return () => cancelAnimationFrame(rafId);
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.05, rootMargin: '50px' }
-    );
-
-    const currentEl = cardRef.current;
-    if (currentEl) {
-      observer.observe(currentEl);
-    }
-
-    return () => {
-      if (currentEl) observer.unobserve(currentEl);
-      observer.disconnect();
-    };
-  }, []);
-
-  const staggerDelay = Math.min((index % 6) * 60, 300);
-
+  
   return (
     <article
-      ref={cardRef}
-      style={
-        isVisible
-          ? {
-              transitionDelay: `${staggerDelay}ms`,
-            }
-          : undefined
-      }
-      className={`group overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-7 lg:p-8 shadow-2xs hover:shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-stone-400/80 will-change-transform ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-      }`}
+      className="group overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-7 lg:p-8 shadow-2xs hover:shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-stone-400/80"
     >
       {/* Top Grid: TEXT LEFT (~62-65%), IMAGE RIGHT (~35-38%) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)] lg:gap-10 lg:items-center">

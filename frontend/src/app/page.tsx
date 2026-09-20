@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MOCK_EVENTS } from '../data/mockEvents';
-import { getAllEvents } from '../lib/events';
-import { Event } from '../types/event';
+import { getEvents } from '../lib/api';
+import { Event, EventCategory } from '../types/event';
 import { Navbar } from '../components/Navbar';
 import { Hero } from '../components/Hero';
 import { SearchBar } from '../components/SearchBar';
@@ -13,8 +12,27 @@ import { EventGrid } from '../components/EventGrid';
 import { EventModal } from '../components/EventModal';
 import { Footer } from '../components/Footer';
 
+function mapEventCategory(eventType?: string | null): EventCategory {
+  switch (eventType?.toUpperCase()) {
+    case 'TECHNICAL':
+      return 'Technical';
+    case 'CULTURAL':
+      return 'Cultural';
+    case 'SPORTS':
+      return 'Sports';
+    case 'WORKSHOP':
+      return 'Workshop';
+    case 'COMPETITION':
+      return 'Competition';
+    case 'HACKATHON':
+      return 'Technical';
+    default:
+      return 'Workshop';
+  }
+}
+
 export default function HomePage() {
-  const [allEvents, setAllEvents] = useState<Event[]>(MOCK_EVENTS);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('All');
   const [modalEvent, setModalEvent] = useState<Event | null>(null);
@@ -22,20 +40,48 @@ export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Sync with localStorage on client mount & listen for event additions
-  useEffect(() => {
-    const sync = () => {
-      setAllEvents(getAllEvents());
-    };
-    const rafId = requestAnimationFrame(sync);
+ useEffect(() => {
+  const loadEvents = async () => {
+    try {
+      const backendEvents = await getEvents();
+      console.log('BACKEND EVENTS:', backendEvents);
 
-    window.addEventListener('clubops_events_updated', sync);
-    window.addEventListener('storage', sync);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('clubops_events_updated', sync);
-      window.removeEventListener('storage', sync);
-    };
-  }, []);
+      const mappedEvents: Event[] = backendEvents.map((event) => ({
+        id: String(event.id),
+        title: event.title,
+        clubName: `Club ${event.club_id}`,
+        category: mapEventCategory(event.event_type),
+        date: new Date(event.start_datetime).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+        }),
+        rawDate: event.start_datetime,
+        time: new Date(event.start_datetime).toLocaleTimeString('en-IN', {
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+        venue: event.venue || 'Venue TBA',
+        bannerUrl: event.banner_url || '',
+        registrationStatus:
+          event.status === 'PUBLISHED' ? 'Open' : 'Closed',
+        description: event.description || '',
+        shortDescription: event.description || '',
+        headline: event.headline || undefined,
+        capacity: event.capacity || undefined,
+        createdAt: event.created_at,
+        published: event.status === 'PUBLISHED',
+        startTime: event.start_datetime,
+        endTime: event.end_datetime,
+      }));
+
+      setAllEvents(mappedEvents);
+    } catch (error) {
+      console.error('Failed to load backend events:', error);
+    }
+  };
+
+  loadEvents();
+}, []);
 
   const eventsSectionRef = useRef<HTMLElement>(null);
 

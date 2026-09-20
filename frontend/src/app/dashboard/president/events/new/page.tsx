@@ -1,5 +1,6 @@
 'use client';
 
+import { createEvent } from '@/lib/api';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,7 +13,6 @@ import {
   formatDisplayTime,
   generateEventBanner,
   generateEventCommunication,
-  saveCustomEvent,
 } from '@/lib/events';
 import { PresidentNav } from '@/components/dashboard/PresidentNav';
 import { DashboardFooter } from '@/components/dashboard/DashboardFooter';
@@ -138,7 +138,7 @@ export default function NewEventPage() {
   };
 
   // Validate and Publish
-  const handlePublish = (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     setConflictError(null);
 
@@ -188,38 +188,34 @@ export default function NewEventPage() {
 
     const bannerUrl = finalBannerConfig?.bannerUrl || CATEGORY_BANNERS[category];
 
-    try {
-      saveCustomEvent({
-        title: title.trim(),
-        clubName: clubName.trim(),
-        category,
-        date: formatDisplayDate(date),
-        rawDate: date,
-        time: formatDisplayTime(startTime, endTime),
-        venue: venue.trim(),
-        bannerUrl,
-        registrationStatus: 'Open',
-        description: description.trim(),
-        shortDescription: description.trim().slice(0, 140) + (description.length > 140 ? '...' : ''),
-        capacity: capacity ? Number(capacity) : undefined,
-        headline: headline.trim() || undefined,
-        participantMessage: participantMessage.trim() || undefined,
-        volunteerMessage: volunteerMessage.trim() || undefined,
-        tags: tags.length > 0 ? tags : [category],
-        startTime,
-        endTime,
-        volunteersNeeded: 25,
-        openTasksCount: 12,
-        bannerConfig: finalBannerConfig,
-      });
+try {
+const startDateTime = `${date}T${startTime}:00`;
+const endDateTime = `${date}T${endTime}:00`;
 
-      // Redirect to dashboard with success query param
-      router.push('/dashboard/president?published=true');
-    } catch (err: unknown) {
-      setIsSubmitting(false);
-      const msg = err instanceof Error ? err.message : 'Failed to publish event.';
-      setConflictError(msg);
-    }
+await createEvent({
+  title: title.trim(),
+  headline: headline.trim() || null,
+  description: description.trim(),
+  banner_url: bannerUrl || null,
+  event_type: category.toUpperCase(),
+  venue: venue.trim(),
+  start_datetime: startDateTime,
+  end_datetime: endDateTime,
+  registration_deadline: null,
+  capacity: capacity ? Number(capacity) : null,
+  status: 'DRAFT',
+  club_id: 1,
+  created_by: 8,
+});
+
+router.push('/dashboard/president?published=true');
+
+} catch (err: unknown) {
+  setIsSubmitting(false);
+
+  const msg = err instanceof Error ? err.message : 'Failed to publish event.';
+  setConflictError(msg);
+}
   };
 
   const bannerPreviewUrl = bannerConfig?.bannerUrl || CATEGORY_BANNERS[category];
